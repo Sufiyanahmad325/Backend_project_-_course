@@ -1,2 +1,2 @@
 console.log(hello);
-var hello = "atata"
+var hello = "atata0"
