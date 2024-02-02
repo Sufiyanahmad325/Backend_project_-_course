@@ -1,0 +1,15 @@
+{
+  "name": "6backend_setup_and_project",
+  "version": "1.0.0",
+  "description": "this is project with javaScript and express.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "sufiyan",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.3",
+    "prettier": "^3.2.4"
+  }
+}
