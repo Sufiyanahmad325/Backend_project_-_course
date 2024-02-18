@@ -3,6 +3,7 @@ import { ApiError } from '../utils/ApiError.js'
 import { User } from '../models/user.model.js'
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt  from "jsonwebtoken"
 
 
 
@@ -143,23 +144,23 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
 
-    const options= {
-        httpOnly:true,
-        secure:true
+    const options = {
+        httpOnly: true,
+        secure: true
     }
 
     return res.status(200)
-    .cookie("accessToken" , accessToken , options)
-    .cookie("refreshToken" , refreshToken , options)
-    .json(
-        new ApiResponse(
-            200,{
-                user:loggedInUser,accessToken,
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200, {
+                user: loggedInUser, accessToken,
                 refreshToken
             },
-            "user logged In successfully"
+                "user logged In successfully"
             )
-    )
+        )
 
 
 })
@@ -167,42 +168,84 @@ const loginUser = asyncHandler(async (req, res) => {
 
 
 
-const logoutUser = asyncHandler(async(req, res)=>{
-// console.log(req.user);
+const logoutUser = asyncHandler(async (req, res) => {
+    console.log(req.user);
     // yaha pe hamne req.user._id se user ko find kiya hai or phir usme hamne ko object liya hai jo data ko update krta hai
     await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set:{           //set se ham find kiye hua object me refresh token ko update kr ke undefined kiya hai
-                refreshToken:undefined
+            $set: {           //set se ham find kiye hua object me refresh token ko update kr ke undefined kiya hai
+                refreshToken: undefined
             }
         },
         {
-            new:true        //usko dene se jo return me value milegi wo new milegi , agr usk nhi diya to old value milegi jisme purana data hoga
+            new: true        //usko dene se jo return me value milegi wo new milegi , agr usk nhi diya to old value milegi jisme purana data hoga
         }
     );
 
-    const options= {
-        httpOnly:true,
-        secure:true
+    const options = {
+        httpOnly: true,
+        secure: true
     }
 
     return res.status(200)
-    .clearCookie("accessToken" , options)
-    .clearCookie("refreshToken" , options)
-    .json(new ApiResponse(200,{} , "user logged out"))
-    
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new ApiResponse(200, {}, "user logged out"))
+
 })
 
 
 
 
+
+
+
+const refreshAccessToken = asyncHandler(async(req,res)=>{
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+    if (incomingRefreshToken) {
+        throw new ApiError(401, "unauthorized request")
+    }
+    
+    try {
+        const decodedToken = await jwt.verify( incomingRefreshToken , process.env.REFRESH_TOKEN_SECRET )
+        
+        const user = await User.findById(decodedToken?._id)
+        
+        if(!user){
+            throw new ApiError(401 , "Invalid refresh Token")
+        }
+        
+        if(incomingRefreshToken!== user?.refreshToken){
+            throw new ApiError(401 ," Refresh Token is expired or used")
+        }
+        
+        const options={
+            httpOnly:true,
+            secure:true
+        }
+        
+        const {accessToken , newRefreshToken} = await generateRefreshToken(user?._id)
+        
+        return res
+        .status(200)
+        .cookie("accessToken",accessToken , options)
+        .cookie("refreshToken", newRefreshToken , options)
+        .json(
+            new ApiResponse(200 , {accessToken , refreshToken:newRefreshToken} ,"Access refreshed Successfully" )
+        )
+    } catch (error) {
+        throw new ApiError(400 , error?.message || "invalid RefreshToken" )
+    }
+})
 
 
 
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessToken
 }
 
