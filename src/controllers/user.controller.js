@@ -251,10 +251,10 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 
 const changepassword = asyncHandler(async (req, res) => {
-    const { oldPassword, newpassword } = req.body
-    // if(newpassword !== confPassword){
-    //     throw new ApiError(400 , "new password and confirmpassword does not match")
-    // }
+    const { oldPassword, newPassword } = req.body
+    if(newpassword === confPassword){
+        throw new ApiError(400 , "new password and confirmpassword does not match")
+    }
     const user = await User.findById(req.user?._id)
    const isPasswordCorrect =  user.isPasswordCorrect(oldPassword)
 
@@ -262,7 +262,7 @@ const changepassword = asyncHandler(async (req, res) => {
     throw new ApiError(400 , "Invalid old password")
    }
 
-   user.password = newpassword
+   user.password = newPassword
    await user.save({validateBeforeSave:false})
 
    return res.status(200)
@@ -283,6 +283,10 @@ const getCurrentUser = asyncHandler(async(req,res)=>{
 })
 
 
+
+
+
+
 const updateAccountDetails = asyncHandler(async(req, res)=>{
 
     const {fullName , email} = req.body
@@ -290,9 +294,10 @@ const updateAccountDetails = asyncHandler(async(req, res)=>{
         throw new ApiError(400 , "All fiels are required")
     }
 
-    const user = User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
+            
             $set:{
                 fullName,
                 email
@@ -310,6 +315,9 @@ const updateAccountDetails = asyncHandler(async(req, res)=>{
 
 
 })
+
+
+
 
 
 
@@ -374,6 +382,76 @@ const updateUsercoverImage = asyncHandler(async(req, res)=>{
         .status(200)
         .json(new ApiResponse(200 , user , "cover image updated successfully"))
 })
+
+
+
+
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+// i have no big knowladge about them so i am stop this pipline code , after getting knowladge about pipline then i will complete this project 
+
+
+// const getUserChannelProfile=asyncHandler(async(req , res )=>{    
+//     const {username} = req.params
+
+//     if(!username?.trim()){
+//         throw new ApiError(400 , "username is missing")
+//     }
+
+//     const chennel = await User.aggregate([
+//         {
+//             $match:{
+//                 username:username?.toLowerCase()
+//             }
+//         },
+//        {
+//         $lookup:{
+//             from:"subscriptions",
+//             localField:"_id",
+//             foreignField:"channel" ,
+//             as:"subscribers"
+//         }
+//        },
+//        {
+//         $lookup:{
+//             from:"subscriptions",
+//             localField:"_id",
+//             foreignField:"subscriber",
+//             as:"subscribedTo"
+//         }
+//        },
+
+//        {
+//         $addFields:{
+//             subscriberCount:{
+//                 $size:"$subscribers"
+//             },
+//             channelsSubscribedToCount:{
+//                 $size:"$subscribedTo"
+//             },
+//             isSubscibed:{
+//                 $cond:{
+//                     if:{$in:[req.user?._id , "subscribers.subscriber"]},
+//                     then:true,
+//                     else:false
+//                 }
+//             }
+//         }
+//        },
+       
+
+//     ])
+//})
+
+
+
+
+
+
+
+
 
 
 export {
